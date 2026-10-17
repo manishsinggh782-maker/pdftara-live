@@ -86,9 +86,8 @@ export const metadata: Metadata = {
     ],
   },
 
-  // favicon.svg is located at src/app/favicon.svg.
-  // Next.js App Router discovers this file automatically.
-  // Keep explicit icon URLs only if the files exist at these paths.
+  // Next.js automatically detects src/app/favicon.ico.
+  // No explicit favicon path is required here.
 };
 
 export const viewport: Viewport = {
