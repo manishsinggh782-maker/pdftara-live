@@ -1,11 +1,12 @@
+
 import Script from 'next/script';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '@/app/globals.css';
 import { GoogleScripts } from '@/components/GoogleScripts';
 
-// 🚀 PDFTARA MASTER METADATA
+// PDFTARA MASTER METADATA
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.pdftara.com/'),
+  metadataBase: new URL('https://www.pdftara.com'),
 
   title: {
     default: 'PDFTara - Free Private PDF Tools',
@@ -74,19 +75,27 @@ export const metadata: Metadata = {
     title: 'PDFTara - Free & Private PDF Tools',
     description:
       'Merge and edit PDFs securely in your browser. No uploads, maximum security.',
+    url: 'https://www.pdftara.com/',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
+        alt: 'PDFTara - Free Private PDF Tools',
       },
     ],
   },
 
-  icons: {
-    icon: '/favicon.svg',
-    apple: '/favicon.svg',
-  },
+  // favicon.svg is located at src/app/favicon.svg.
+  // Next.js App Router discovers this file automatically.
+  // Keep explicit icon URLs only if the files exist at these paths.
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  colorScheme: 'light dark',
 };
 
 export default async function RootLayout({
@@ -102,19 +111,19 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
-        {/* 🚀 COI Service Worker: Multithreading support */}
+        {/* COI Service Worker: Multithreading support */}
         <Script
           src="/coi-serviceworker.js"
           strategy="beforeInteractive"
         />
 
-        {/* 🛡️ TrustedSite Certification */}
+        {/* TrustedSite Certification */}
         <Script
           src="https://cdn.ywxi.net/js/1.js"
           strategy="afterInteractive"
         />
 
-        {/* 🚀 Google AdSense */}
+        {/* Google AdSense */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4129411618696895"
@@ -138,16 +147,6 @@ export default async function RootLayout({
           content="4047b6a7242d326afbebdff67d9377fd"
         />
 
-        <meta
-          name="color-scheme"
-          content="light dark"
-        />
-
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=5"
-        />
-
         <style
           dangerouslySetInnerHTML={{
             __html: 'html{scrollbar-gutter:stable}',
@@ -162,3 +161,4 @@ export default async function RootLayout({
     </html>
   );
 }
+```
