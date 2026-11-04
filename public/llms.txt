@@ -1,0 +1,14 @@
+# PDFTara
+
+> PDFTara offers free, private PDF tools in the browser and a free desktop app, PDFTara Studio, for Windows, macOS and Linux.
+
+## PDFTara Studio (desktop app)
+- Page: https://www.pdftara.com/en/desktop/
+- Free, local-first PDF app. Files are processed on the user's device and are not uploaded.
+- Features: 53+ PDF tools, visual workflow studio, offline AI copilot (Ollama, LM Studio), in-place text editing.
+- Platforms: Windows 10/11 (64-bit), macOS (Apple Silicon and Intel), Linux (AppImage, .deb).
+
+## Online PDF tools
+- Tools: https://www.pdftara.com/en/tools/
+- Studio (web): https://www.pdftara.com/en/studio/
+- FAQ: https://www.pdftara.com/en/faq/

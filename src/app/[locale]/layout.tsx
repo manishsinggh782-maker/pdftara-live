@@ -29,8 +29,8 @@ export const viewport: Viewport = {
 // Title 60 character se kam, description lagbhag 120-155 character
 const seoData: Record<string, { title: string; desc: string }> = {
   en: {
-    title: 'PDFTara - Free & Private PDF Tools Online',
-    desc: 'Merge, split, compress and convert PDFs free in your browser. Files never leave your device, so your documents stay 100% private.',
+    title: 'PDFTara - Free PDF Tools Online & Desktop App',
+    desc: 'Merge, split, compress and convert PDFs free in your browser, or download PDFTara Studio for Windows, Mac & Linux. Your files stay 100% private.',
   },
   es: {
     title: 'PDFTara - Herramientas PDF Gratis y Privadas',
@@ -90,6 +90,35 @@ const seoData: Record<string, { title: string; desc: string }> = {
   },
 };
 
+// 🔑 English keywords (desktop app + offline AI copilot)
+const englishKeywords: string[] = [
+  'PDFTara',
+  'PDFTara Studio',
+  'free PDF tools',
+  'online PDF tools',
+  'private PDF editor',
+  'ollama download',
+  'ollama cloud',
+  'gemma4 download',
+  'desktop free offline pdf ai copilot',
+  'desktop local pdf chatbot for windows mac',
+  'pdf editor with local llm',
+  'offline PDF AI copilot',
+  'local PDF chatbot',
+  'PDF chatbot for Windows',
+  'PDF chatbot for Mac',
+  'PDF editor with Ollama',
+  'PDF editor with LM Studio',
+  'desktop PDF editor',
+  'free desktop PDF editor',
+  'offline PDF editor',
+  'PDF editor for Windows',
+  'PDF editor for Mac',
+  'PDF editor for Linux',
+  'local AI PDF assistant',
+  'private AI PDF tool',
+];
+
 export async function generateMetadata({
   params,
 }: {
@@ -116,6 +145,8 @@ export async function generateMetadata({
     metadataBase: new URL('https://www.pdftara.com/'),
     title: { default: currentSeo.title, template: `%s` },
     description: currentSeo.desc,
+    // Keywords sirf English page par (baaki languages ke liye English keywords sahi nahi)
+    ...(validLocale === 'en' ? { keywords: englishKeywords } : {}),
     alternates: {
       // Individual tool/blog pages apne page.tsx me apna full canonical override karenge
       canonical: `https://www.pdftara.com/${validLocale}/`,
@@ -174,6 +205,50 @@ export default async function LocaleLayout({
     'aggregateRating': { '@type': 'AggregateRating', 'ratingValue': '4.9', 'ratingCount': '18540', 'bestRating': '5', 'worstRating': '1' }
   };
 
+  // 🖥️ PDFTara Studio - Desktop App (Windows, Mac, Linux)
+  const desktopSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    'name': 'PDFTara Studio',
+    'alternateName': 'PDFTara Desktop App',
+    'url': `https://www.pdftara.com/${locale}/desktop/`,
+    'downloadUrl': `https://www.pdftara.com/${locale}/desktop/`,
+    'applicationCategory': 'BusinessApplication',
+    'applicationSubCategory': 'PDF Editor',
+    'operatingSystem': 'Windows 10, Windows 11, macOS, Linux',
+    'description': 'Free, private desktop PDF app with 53+ tools, visual workflow studio, offline AI copilot and in-place text editing. Files are processed on your device.',
+    'image': 'https://www.pdftara.com/images/desktop/home.png',
+    'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
+    'publisher': { '@type': 'Organization', 'name': 'PDFTara', 'url': 'https://www.pdftara.com/' }
+  };
+
+  // ✨ PDFTara Studio (NEW) - Web version
+  const studioSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    'name': 'PDFTara Studio (Web)',
+    'url': `https://www.pdftara.com/${locale}/studio/`,
+    'applicationCategory': 'BusinessApplication',
+    'operatingSystem': 'Web Browser',
+    'description': 'Open PDF Studio in your browser: view, edit, annotate and process PDFs privately. No upload, no signup.',
+    'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
+    'publisher': { '@type': 'Organization', 'name': 'PDFTara', 'url': 'https://www.pdftara.com/' }
+  };
+
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    'name': 'PDFTara',
+    'url': 'https://www.pdftara.com/',
+    'logo': 'https://www.pdftara.com/images/logo.png',
+    'sameAs': [
+      'https://t.me/pdftara',
+      'https://www.youtube.com/@PDFtara',
+      'https://www.producthunt.com/products/pdftara-secure-free',
+      'https://www.trustpilot.com/review/pdftara.com'
+    ]
+  };
+
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -205,6 +280,18 @@ export default async function LocaleLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(desktopSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(studioSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
         <script
           type="application/ld+json"

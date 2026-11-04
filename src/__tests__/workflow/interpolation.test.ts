@@ -12,9 +12,9 @@ describe('interpolateTokens', () => {
 
     it('interpolates {filename} and {basename} correctly', () => {
         const result = interpolateTokens('{filename}_processed_{basename}', {
-            filename: 'annual_report_2026.pdf',
+            filename: 'annual_report_2025.pdf',
         });
-        expect(result).toBe('annual_report_2026_processed_annual_report_2026');
+        expect(result).toBe('annual_report_2025_processed_annual_report_2025');
     });
 
     it('handles files with multiple dots correctly', () => {
@@ -60,4 +60,23 @@ describe('interpolateTokens', () => {
         const result = interpolateTokens('{filename}_{index}_{total}', {});
         expect(result).toBe('document_1_1');
     });
+    it.each(['$&', "$$", "$`", "$'", '{date}', '{index}', '{ext}'])(
+        'preserves literal %s in input filenames', (literal) => {
+            expect(interpolateTokens('prefix_{filename}_{basename}.{ext}', {
+                filename: `report_${literal}.pdf`, outputExt: 'pdf',
+            })).toBe(`prefix_report_${literal}_report_${literal}.pdf`);
+        }
+    );
+
+    it('does not recursively expand tokens introduced by context values', () => {
+        expect(interpolateTokens('{filename}_{tool}.{ext}', {
+            filename: 'report_{tool}.pdf', toolId: 'custom-{ext}', outputExt: 'pdf',
+        })).toBe('report_{tool}_custom-{ext}.pdf');
+    });
+
+    it('leaves unknown template tokens unchanged', () => {
+        expect(interpolateTokens('{unknown}_{INDEX}_{index}', { index: 2 }))
+            .toBe('{unknown}_3_3');
+    });
+
 });

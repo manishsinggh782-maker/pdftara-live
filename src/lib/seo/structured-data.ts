@@ -1,7 +1,7 @@
 /**
  * JSON-LD Structured Data Generation
  * Creates schema.org structured data for SEO
- *
+ * 
  * @module lib/seo/structured-data
  */
 
@@ -11,6 +11,7 @@ import type { Locale } from '@/lib/i18n/config';
 
 /**
  * SoftwareApplication schema for tool pages
+ * @see https://schema.org/SoftwareApplication
  */
 export interface SoftwareApplicationSchema {
   '@context': 'https://schema.org';
@@ -38,6 +39,7 @@ export interface SoftwareApplicationSchema {
 
 /**
  * HowTo schema for step-by-step instructions
+ * @see https://schema.org/HowTo
  */
 export interface HowToSchema {
   '@context': 'https://schema.org';
@@ -60,6 +62,7 @@ export interface HowToSchema {
 
 /**
  * WebPage schema for enhanced page information
+ * @see https://schema.org/WebPage
  */
 export interface WebPageSchema {
   '@context': 'https://schema.org';
@@ -85,6 +88,7 @@ export interface WebPageSchema {
 
 /**
  * FAQPage schema for FAQ sections
+ * @see https://schema.org/FAQPage
  */
 export interface FAQPageSchema {
   '@context': 'https://schema.org';
@@ -101,6 +105,7 @@ export interface FAQPageSchema {
 
 /**
  * WebSite schema for the main site
+ * @see https://schema.org/WebSite
  */
 export interface WebSiteSchema {
   '@context': 'https://schema.org';
@@ -120,6 +125,7 @@ export interface WebSiteSchema {
 
 /**
  * Organization schema
+ * @see https://schema.org/Organization
  */
 export interface OrganizationSchema {
   '@context': 'https://schema.org';
@@ -127,10 +133,12 @@ export interface OrganizationSchema {
   name: string;
   url: string;
   logo?: string;
+  sameAs?: string[];
 }
 
 /**
  * BreadcrumbList schema
+ * @see https://schema.org/BreadcrumbList
  */
 export interface BreadcrumbListSchema {
   '@context': 'https://schema.org';
@@ -169,9 +177,10 @@ export function generateSoftwareApplicationSchema(
       ratingValue: '4.8',
       ratingCount: '1250',
     },
-    keywords: content.keywords?.join(', '),
+    keywords: content.keywords ? content.keywords.join(', ') : undefined,
   };
 
+  // Add feature list if available
   if (tool.features && tool.features.length > 0) {
     schema.featureList = tool.features;
   }
@@ -196,7 +205,7 @@ export function generateHowToSchema(
     '@type': 'HowTo',
     name: `How to ${content.title}`,
     description: content.metaDescription,
-    totalTime: 'PT5M',
+    totalTime: 'PT5M', // Estimated 5 minutes for most PDF operations
     tool: [
       {
         '@type': 'HowToTool',
@@ -231,12 +240,15 @@ export function generateWebPageSchema(
     zh: 'zh-CN',
     'zh-TW': 'zh-TW',
     pt: 'pt-BR',
-    ar: 'ar-SA',
+    ar: 'ar-AR',
+    he: 'he-IL',
     it: 'it-IT',
     id: 'id-ID',
     vi: 'vi-VN',
     ro: 'ro-RO',
     pl: 'pl-PL',
+    cs: 'cs-CZ',
+    hi: 'hi-IN',
   };
 
   return {
@@ -311,6 +323,9 @@ export function generateOrganizationSchema(): OrganizationSchema {
     name: siteConfig.name,
     url: siteConfig.url,
     logo: `${siteConfig.url}/images/logo.png`,
+    // GitHub link hata diya gaya hai (siteConfig.links me github defined nahi hai).
+    // Social profiles jodni ho to yahan URLs daal sakte ho, jaise ['https://t.me/pdftara'].
+    sameAs: [],
   };
 }
 
@@ -347,34 +362,20 @@ export function generateToolPageStructuredData(
   webPage: WebPageSchema;
   breadcrumb: BreadcrumbListSchema;
 } {
-  const softwareApplication = generateSoftwareApplicationSchema(
-    tool,
-    content,
-    locale
-  );
-
+  const softwareApplication = generateSoftwareApplicationSchema(tool, content, locale);
   const howTo = generateHowToSchema(tool, content, locale);
   const webPage = generateWebPageSchema(tool, content, locale);
 
-  const faqPage =
-    content.faq && content.faq.length > 0
-      ? generateFAQPageSchema(content.faq)
-      : null;
+  // Only generate FAQ schema if there are FAQs
+  const faqPage = content.faq && content.faq.length > 0
+    ? generateFAQPageSchema(content.faq)
+    : null;
 
   const breadcrumb = generateBreadcrumbSchema(
     [
-      {
-        name: 'Home',
-        path: '',
-      },
-      {
-        name: 'Tools',
-        path: '/tools',
-      },
-      {
-        name: content.title,
-        path: `/tools/${tool.slug}`,
-      },
+      { name: 'Home', path: '' },
+      { name: 'Tools', path: '/tools' },
+      { name: content.title, path: `/tools/${tool.slug}` },
     ],
     locale
   );
@@ -392,7 +393,7 @@ export function generateToolPageStructuredData(
  * Serialize structured data to JSON-LD script tag content
  */
 export function serializeStructuredData(data: object): string {
-  return JSON.stringify(data);
+  return JSON.stringify(data, null, 0);
 }
 
 /**
@@ -401,28 +402,16 @@ export function serializeStructuredData(data: object): string {
 export function validateSoftwareApplicationSchema(
   schema: SoftwareApplicationSchema
 ): { valid: boolean; missingFields: string[] } {
-  const requiredFields = [
-    '@context',
-    '@type',
-    'name',
-    'description',
-    'url',
-    'applicationCategory',
-    'operatingSystem',
-    'offers',
-  ];
-
+  const requiredFields = ['@context', '@type', 'name', 'description', 'url', 'applicationCategory', 'operatingSystem', 'offers'];
   const missingFields: string[] = [];
 
   for (const field of requiredFields) {
-    if (
-      !(field in schema) ||
-      !schema[field as keyof SoftwareApplicationSchema]
-    ) {
+    if (!(field in schema) || !schema[field as keyof SoftwareApplicationSchema]) {
       missingFields.push(field);
     }
   }
 
+  // Check @type value
   if (schema['@type'] !== 'SoftwareApplication') {
     missingFields.push('@type (must be SoftwareApplication)');
   }
@@ -452,22 +441,16 @@ export function validateFAQPageSchema(
   if (!schema.mainEntity || !Array.isArray(schema.mainEntity)) {
     missingFields.push('mainEntity');
   } else {
+    // Validate each FAQ item
     for (let i = 0; i < schema.mainEntity.length; i++) {
       const item = schema.mainEntity[i];
-
       if (item['@type'] !== 'Question') {
         missingFields.push(`mainEntity[${i}].@type`);
       }
-
       if (!item.name) {
         missingFields.push(`mainEntity[${i}].name`);
       }
-
-      if (
-        !item.acceptedAnswer ||
-        item.acceptedAnswer['@type'] !== 'Answer' ||
-        !item.acceptedAnswer.text
-      ) {
+      if (!item.acceptedAnswer || item.acceptedAnswer['@type'] !== 'Answer' || !item.acceptedAnswer.text) {
         missingFields.push(`mainEntity[${i}].acceptedAnswer`);
       }
     }

@@ -7,7 +7,7 @@ import { ProcessingProgress, ProcessingStatus } from '../ProcessingProgress';
 import { DownloadButton } from '../DownloadButton';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { processBookmarks, BookmarkItem, BookmarkOptions } from '@/lib/pdf/processors/bookmark';
+import { processBookmarks, parseBookmarkDestination, BookmarkItem, BookmarkOptions } from '@/lib/pdf/processors/bookmark';
 import type { ProcessOutput } from '@/types/pdf';
 
 // Store pdfjs module reference
@@ -36,6 +36,7 @@ interface BookmarkNode {
   id: string;
   title: string;
   pageNumber: number;
+  destination?: BookmarkItem['destination'];
   children: BookmarkNode[];
   color?: string;
   style?: 'bold' | 'italic' | 'bold-italic';
@@ -58,8 +59,11 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
 
   // Bookmark state
   const [bookmarks, setBookmarks] = useState<BookmarkNode[]>([]);
+  const [bookmarksCleared, setBookmarksCleared] = useState(false);
   const [selectedBookmarkId, setSelectedBookmarkId] = useState<string | null>(null);
   const [editingBookmark, setEditingBookmark] = useState<BookmarkNode | null>(null);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const lastCheckedIdRef = useRef<string | null>(null);
 
   // Processing state
   const [status, setStatus] = useState<ProcessingStatus>('idle');
@@ -142,6 +146,7 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
 
     for (const item of outline) {
       let pageNumber = 1;
+      let destination: BookmarkItem['destination'];
 
       // Get destination page
       if (item.dest) {
@@ -149,10 +154,14 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
           const dest = typeof item.dest === 'string'
             ? await doc.getDestination(item.dest)
             : item.dest;
-          if (dest && dest[0]) {
-            const pageRef = dest[0];
-            const pageIndex = await doc.getPageIndex(pageRef);
-            pageNumber = pageIndex + 1;
+          if (dest && dest[0] !== undefined && dest[0] !== null) {
+            const pageIndex = typeof dest[0] === 'number'
+              ? dest[0]
+              : await doc.getPageIndex(dest[0]);
+            if (Number.isInteger(pageIndex) && pageIndex >= 0 && pageIndex < doc.numPages) {
+              pageNumber = pageIndex + 1;
+              destination = parseBookmarkDestination({ type: dest[1]?.name, args: dest.slice(2) });
+            }
           }
         } catch (e) {
           console.warn('Failed to get destination for bookmark:', item.title);
@@ -178,6 +187,7 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
         id: `bm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         title: item.title || 'Untitled',
         pageNumber,
+        destination,
         children: [],
         color,
         style,
@@ -237,6 +247,7 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
       setError(null);
       setResult(null);
       setBookmarks([]);
+      setBookmarksCleared(false);
       loadPdf(files[0]);
     }
   }, [loadPdf]);
@@ -245,6 +256,7 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
     setFile(null);
     setPdfDoc(null);
     setBookmarks([]);
+    setBookmarksCleared(false);
     setResult(null);
     setError(null);
     setStatus('idle');
@@ -304,12 +316,89 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
         .map(node => ({ ...node, children: removeFrom(node.children) }));
     };
 
-    setBookmarks(prev => removeFrom(prev));
+    const remaining = removeFrom(bookmarks);
+    setBookmarks(remaining);
+    if (remaining.length === 0) {
+      setBookmarksCleared(true);
+    }
     if (selectedBookmarkId === id) {
       setSelectedBookmarkId(null);
     }
     setResult(null);
-  }, [selectedBookmarkId]);
+  }, [bookmarks, selectedBookmarkId]);
+
+  const handleRemoveAllBookmarks = useCallback(() => {
+    if (bookmarks.length === 0) return;
+    const confirmed = confirm(
+      tTools('bookmark.removeAllConfirm') ||
+        'Remove all bookmarks? You can still save to download a PDF with no bookmarks.'
+    );
+    if (!confirmed) return;
+
+    setBookmarks([]);
+    setSelectedBookmarkId(null);
+    setEditingBookmark(null);
+    setCheckedIds(new Set());
+    setResult(null);
+    setBookmarksCleared(true);
+  }, [bookmarks.length, tTools]);
+
+  const countChecked = (nodes: BookmarkNode[]): number =>
+    nodes.reduce(
+      (count, node) => count + (checkedIds.has(node.id) ? 1 : 0) + countChecked(node.children),
+      0
+    );
+  const checkedCount = countChecked(bookmarks);
+
+  // Shift+click checks or unchecks every visible bookmark between the last clicked one and this one
+  const handleToggleChecked = useCallback((id: string, extendRange: boolean) => {
+    const visibleIds: string[] = [];
+    const collectVisible = (nodes: BookmarkNode[]) => {
+      for (const node of nodes) {
+        visibleIds.push(node.id);
+        if (node.isExpanded) collectVisible(node.children);
+      }
+    };
+    collectVisible(bookmarks);
+
+    let idsToToggle = [id];
+    const anchorIndex = lastCheckedIdRef.current ? visibleIds.indexOf(lastCheckedIdRef.current) : -1;
+    const targetIndex = visibleIds.indexOf(id);
+    if (extendRange && anchorIndex !== -1 && targetIndex !== -1) {
+      const [start, end] = anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+      idsToToggle = visibleIds.slice(start, end + 1);
+    }
+
+    const shouldCheck = !checkedIds.has(id);
+    const next = new Set(checkedIds);
+    idsToToggle.forEach(toggleId => (shouldCheck ? next.add(toggleId) : next.delete(toggleId)));
+    setCheckedIds(next);
+    lastCheckedIdRef.current = id;
+  }, [bookmarks, checkedIds]);
+
+  const handleRemoveSelectedBookmarks = useCallback(() => {
+    if (checkedCount === 0) return;
+    const confirmed = confirm(
+      tTools('bookmark.removeSelectedConfirm', { count: checkedCount }) ||
+        `Remove ${checkedCount} selected bookmark(s)? Their child bookmarks will also be removed.`
+    );
+    if (!confirmed) return;
+
+    const removeChecked = (nodes: BookmarkNode[]): BookmarkNode[] =>
+      nodes
+        .filter(node => !checkedIds.has(node.id))
+        .map(node => ({ ...node, children: removeChecked(node.children) }));
+
+    const remaining = removeChecked(bookmarks);
+    setBookmarks(remaining);
+    setCheckedIds(new Set());
+    setSelectedBookmarkId(null);
+    setEditingBookmark(null);
+    setResult(null);
+    if (remaining.length === 0) {
+      setBookmarksCleared(true);
+    }
+  }, [bookmarks, checkedIds, checkedCount, tTools]);
 
   // Update bookmark
   const handleUpdateBookmark = useCallback((updated: BookmarkNode) => {
@@ -320,7 +409,13 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
     const updateIn = (nodes: BookmarkNode[]): BookmarkNode[] => {
       return nodes.map(node => {
         if (node.id === finalUpdate.id) {
-          return { ...finalUpdate, children: node.children };
+          return {
+            ...finalUpdate,
+            // A changed target page should start at its top, rather than reuse
+            // coordinates belonging to the old page.
+            destination: pageNum === node.pageNumber ? node.destination : undefined,
+            children: node.children,
+          };
         }
         return { ...node, children: updateIn(node.children) };
       });
@@ -432,7 +527,11 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
 
       // Create a deep copy to avoid mutations
       const nodesWithoutSource = removeNode(JSON.parse(JSON.stringify(prev)));
-      if (!sourceNode) return prev;
+      // A descendant target disappears with the source subtree. Do not commit
+      // the removal unless the target still exists (also covers stale targets).
+      const hasTarget = (nodes: BookmarkNode[]): boolean =>
+        nodes.some(node => node.id === targetId || hasTarget(node.children));
+      if (!sourceNode || !hasTarget(nodesWithoutSource)) return prev;
 
       // 2. Recursive insertion at target
       const insertNode = (nodes: BookmarkNode[]): BookmarkNode[] => {
@@ -472,6 +571,7 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
       id: node.id,
       title: node.title,
       pageNumber: node.pageNumber,
+      destination: node.destination,
       color: node.color,
       style: node.style,
       children: node.children.length > 0 ? convertToBookmarkItems(node.children) : undefined,
@@ -480,7 +580,7 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
 
   // Process and save bookmarks
   const handleProcess = useCallback(async () => {
-    if (!file || bookmarks.length === 0) return;
+    if (!file || (bookmarks.length === 0 && !bookmarksCleared)) return;
 
     cancelledRef.current = false;
     setStatus('processing');
@@ -515,7 +615,7 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
       setStatus('error');
     }
-  }, [file, bookmarks]);
+  }, [file, bookmarks, bookmarksCleared]);
 
   const isProcessing = status === 'processing';
 
@@ -545,6 +645,15 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
           }`}
           onClick={() => handleBookmarkClick(bookmark)}
         >
+          <input
+            type="checkbox"
+            checked={checkedIds.has(bookmark.id)}
+            readOnly
+            onClick={(e) => { e.stopPropagation(); handleToggleChecked(bookmark.id, e.shiftKey); }}
+            className="flex-shrink-0 w-4 h-4 cursor-pointer accent-blue-600"
+            aria-label={tTools('bookmark.selectForRemoval', { title: bookmark.title }) || `Select ${bookmark.title}`}
+          />
+
           {/* Drag Handle */}
           <div className="flex-shrink-0 text-gray-400 cursor-grab active:cursor-grabbing">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -757,7 +866,27 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
           <Card variant="outlined" size="lg">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">{tTools('bookmark.bookmarksTitle') || 'Bookmarks'}</h3>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap justify-end gap-1">
+                {checkedCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveSelectedBookmarks}
+                    disabled={isProcessing}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    {tTools('bookmark.removeSelected', { count: checkedCount }) || `Remove selected (${checkedCount})`}
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveAllBookmarks}
+                  disabled={bookmarks.length === 0 || isProcessing}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  {tTools('bookmark.removeAll') || 'Remove all'}
+                </Button>
                 <Button 
                   variant="secondary" 
                   size="sm" 
@@ -789,7 +918,11 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
             <div className="border rounded max-h-[500px] overflow-y-auto">
               {bookmarks.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
-                  <p>{tTools('bookmark.noBookmarks') || 'No bookmarks yet. Click "Add Bookmark" to create one.'}</p>
+                  <p>
+                    {bookmarksCleared
+                      ? (tTools('bookmark.removedAllHint') || 'All bookmarks removed. Save to download a PDF with no bookmarks.')
+                      : (tTools('bookmark.noBookmarks') || 'No bookmarks yet. Click "Add Bookmark" to create one.')}
+                  </p>
                 </div>
               ) : (
                 <div className="p-2 space-y-1">
@@ -802,6 +935,9 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
             <div className="mt-2 space-y-1">
               <p className="text-xs text-gray-500">
                 {tTools('bookmark.hint') || 'Click a bookmark to preview its page. Use +/✎/× to add child, edit, or delete.'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {tTools('bookmark.selectHint') || 'Tick checkboxes to remove several bookmarks at once. Shift+click selects a range.'}
               </p>
               <p className="text-xs text-blue-500 font-medium">
                 {tTools('bookmark.dragHint') || 'Drag and drop to reorder bookmarks.'}
@@ -820,7 +956,7 @@ export function BookmarkTool({ className = '' }: BookmarkToolProps) {
         />
       )}
 
-      {file && bookmarks.length > 0 && (
+      {file && (bookmarks.length > 0 || bookmarksCleared) && (
         <div className="flex flex-wrap items-center gap-4">
           <Button
             variant="primary"

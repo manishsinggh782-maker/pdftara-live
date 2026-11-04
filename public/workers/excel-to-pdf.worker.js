@@ -53,10 +53,10 @@ async function init(needsCJK = false) {
 
     self.postMessage({ type: 'status', message: 'Installing dependencies...' });
     const base = '/pymupdf-wasm/';
-    await pyodide.loadPackage(base + 'numpy-2.2.5-cp313-cp313-pyodide_2026_0_wasm32.whl');
+    await pyodide.loadPackage(base + 'numpy-2.2.5-cp313-cp313-pyodide_2025_0_wasm32.whl');
     await pyodide.loadPackage(base + 'et_xmlfile-2.0.0-py3-none-any.whl');
     await pyodide.loadPackage(base + 'openpyxl-3.1.5-py2.py3-none-any.whl');
-    await pyodide.loadPackage(base + 'pymupdf-1.26.3-cp313-none-pyodide_2026_0_wasm32.whl');
+    await pyodide.loadPackage(base + 'pymupdf-1.26.3-cp313-none-pyodide_2025_0_wasm32.whl');
 
     if (needsCJK) await loadCJKFont();
 

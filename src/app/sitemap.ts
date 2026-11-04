@@ -1,5 +1,5 @@
 /**
- * PDFTARA SITEMAP - VERSION 8.0 (TRAILING SLASH FIX - FINAL)
+ * PDFTARA SITEMAP - VERSION 8.1 (DESKTOP PAGE ADDED)
  * Purpose: Ensure all URLs end with '/' to match live site and fix GSC errors.
  */
 
@@ -16,12 +16,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Har 1 ghante mein update hoga
 export const revalidate = 3600; 
 
-const BASE_URL = 'https://www.pdftara.com';
+const BASE_URL = 'https://www.pdftara.com/';
 
 const PRIORITY = {
   home: 1.0,
   tools: 0.9,
   toolPage: 0.8,
+  desktop: 0.8,
   blogPost: 0.9, 
   blogHome: 0.7,
   static: 0.5,
@@ -30,6 +31,7 @@ const PRIORITY = {
 const STATIC_PAGES = [
   { path: '', priority: PRIORITY.home, changeFreq: 'daily' },
   { path: 'tools', priority: PRIORITY.tools, changeFreq: 'weekly' },
+  { path: 'desktop', priority: PRIORITY.desktop, changeFreq: 'weekly' },
   { path: 'blog', priority: PRIORITY.blogHome, changeFreq: 'daily' },
   { path: 'about', priority: PRIORITY.static, changeFreq: 'monthly' },
   { path: 'faq', priority: PRIORITY.static, changeFreq: 'monthly' },
@@ -50,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
   const allEntries: MetadataRoute.Sitemap = [];
 
-  // PHASE 1: STATIC PAGES (Home, Tools, Contact etc.)
+  // PHASE 1: STATIC PAGES (Home, Tools, Desktop, Contact etc.)
   for (const page of STATIC_PAGES) {
     for (const locale of locales) {
       const url = buildUrl(locale, page.path);

@@ -7,6 +7,7 @@ export const siteConfig = {
   description:
     'Professional PDF Tools - Free, Private & Browser-Based. Merge, split, compress, convert, and edit PDF files online without uploading to servers.',
 
+  // Aakhir me "/" nahi rakhna, warna ${siteConfig.url}/en/... me double slash ban jata hai
   url: 'https://www.pdftara.com',
 
   ogImage: 'https://www.pdftara.com/images/og-image.png',
