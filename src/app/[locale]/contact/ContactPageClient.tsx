@@ -97,7 +97,7 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
               <Card className="p-8 text-center flex flex-col items-center hover:shadow-lg transition-shadow border-t-4 border-t-indigo-500">
                 <div className="relative w-24 h-24 mb-4">
                   <Image 
-                    src="/images/manish.jpg" 
+                    src="/images/manish.png" 
                     alt="Mr. Manish Singh - Owner "
                     fill
                     className="rounded-full object-cover border-2 border-indigo-200 shadow-md"
@@ -141,7 +141,7 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
                 <div className="flex -space-x-4 mb-4">
                   <div className="relative w-20 h-20">
                     <Image 
-                      src="/images/neeraj.jpg" 
+                      src="/images/neeraj.png" 
                       alt="Mr. Neeraj Singh" 
                       fill 
                       className="rounded-full object-cover border-4 border-white shadow-sm" 

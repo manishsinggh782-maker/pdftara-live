@@ -1,17 +1,34 @@
+
 'use client';
 
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { X, ChevronRight, ChevronDown } from 'lucide-react';
+import {
+  X,
+  Menu,
+  ChevronDown,
+  ChevronRight,
+  Home,
+  Sparkles,
+  Wrench,
+  Workflow,
+  Info,
+  BookOpen,
+  HelpCircle,
+  ShieldCheck,
+  Mail,
+  Lock,
+} from 'lucide-react';
+
 import { type Locale } from '@/lib/i18n/config';
 import { type ToolCategory } from '@/types/tool';
-import { Button } from '@/components/ui/Button';
 
 export interface MobileMenuProps {
-  isOpen: boolean;
-  onClose: () => void;
   locale: Locale;
+  isOpen?: boolean;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 
 interface CategoryItem {
@@ -20,9 +37,8 @@ interface CategoryItem {
   href: string;
 }
 
-// Get all focusable elements within a container
 const getFocusableElements = (container: HTMLElement): HTMLElement[] => {
-  const focusableSelectors = [
+  const selectors = [
     'button:not([disabled])',
     'a[href]',
     'input:not([disabled])',
@@ -31,144 +47,301 @@ const getFocusableElements = (container: HTMLElement): HTMLElement[] => {
     '[tabindex]:not([tabindex="-1"])',
   ].join(', ');
 
-  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors));
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(selectors)
+  );
 };
 
-export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, locale }) => {
+export const MobileMenu: React.FC<MobileMenuProps> = ({
+  locale,
+  isOpen,
+  onOpen,
+  onClose,
+}) => {
   const t = useTranslations('home.categories');
   const tCommon = useTranslations('common');
+
   const menuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const touchStart = useRef<number | null>(null);
 
+  const [internalOpen, setInternalOpen] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(
+    null
+  );
+
+  const isControlled =
+    isOpen !== undefined && onOpen !== undefined;
+
+  const menuOpen = isControlled ? isOpen : internalOpen;
+
+  // Open menu
+  const openMenu = useCallback(() => {
+    if (isControlled) {
+      onOpen?.();
+    } else {
+      setInternalOpen(true);
+    }
+  }, [isControlled, onOpen]);
+
+  // Close menu
+  const closeMenu = useCallback(() => {
+    setInternalOpen(false);
+    onClose?.();
+    setExpandedCategory(null);
+  }, [onClose]);
+
+  // PDF Tool Categories
   const categories: CategoryItem[] = [
-    { id: 'edit-annotate', labelKey: 'editAnnotate', href: `/${locale}/tools?category=edit-annotate` },
-    { id: 'convert-to-pdf', labelKey: 'convertToPdf', href: `/${locale}/tools?category=convert-to-pdf` },
-    { id: 'convert-from-pdf', labelKey: 'convertFromPdf', href: `/${locale}/tools?category=convert-from-pdf` },
-    { id: 'organize-manage', labelKey: 'organizeManage', href: `/${locale}/tools?category=organize-manage` },
-    { id: 'optimize-repair', labelKey: 'optimizeRepair', href: `/${locale}/tools?category=optimize-repair` },
-    { id: 'secure-pdf', labelKey: 'securePdf', href: `/${locale}/tools?category=secure-pdf` },
+    {
+      id: 'edit-annotate',
+      labelKey: 'editAnnotate',
+      href: `/${locale}/tools?category=edit-annotate`,
+    },
+    {
+      id: 'convert-to-pdf',
+      labelKey: 'convertToPdf',
+      href: `/${locale}/tools?category=convert-to-pdf`,
+    },
+    {
+      id: 'convert-from-pdf',
+      labelKey: 'convertFromPdf',
+      href: `/${locale}/tools?category=convert-from-pdf`,
+    },
+    {
+      id: 'organize-manage',
+      labelKey: 'organizeManage',
+      href: `/${locale}/tools?category=organize-manage`,
+    },
+    {
+      id: 'optimize-repair',
+      labelKey: 'optimizeRepair',
+      href: `/${locale}/tools?category=optimize-repair`,
+    },
+    {
+      id: 'secure-pdf',
+      labelKey: 'securePdf',
+      href: `/${locale}/tools?category=secure-pdf`,
+    },
   ];
 
-  const mainNavItems = [
-    { href: `/${locale}`, label: tCommon('navigation.home') },
-    { href: `/${locale}/tools`, label: tCommon('navigation.tools'), hasSubmenu: true },
-    { href: `/${locale}/about`, label: tCommon('navigation.about') },
-    { href: `/${locale}/faq`, label: tCommon('navigation.faq') },
-    { href: `/${locale}/privacy`, label: tCommon('navigation.privacy') },
-    { href: `/${locale}/contact`, label: tCommon('navigation.contact') },
+  // Main Navigation
+  const navigationItems = [
+    {
+      label: tCommon('navigation.home'),
+      href: `/${locale}`,
+      icon: Home,
+    },
+    {
+      label: 'Studio',
+      href: `/${locale}/studio`,
+      icon: Sparkles,
+      badge: 'NEW',
+    },
+    {
+      label: tCommon('navigation.tools'),
+      href: `/${locale}/tools`,
+      icon: Wrench,
+      submenu: true,
+    },
+    {
+      label: 'Workflow',
+      href: `/${locale}/workflow`,
+      icon: Workflow,
+    },
+    {
+      label: tCommon('navigation.about'),
+      href: `/${locale}/about`,
+      icon: Info,
+    },
+    {
+      label: 'Blog',
+      href: `/${locale}/blog`,
+      icon: BookOpen,
+    },
+    {
+      label: tCommon('navigation.faq'),
+      href: `/${locale}/faq`,
+      icon: HelpCircle,
+    },
+    {
+      label: 'Privacy Policy',
+      href: `/${locale}/privacy`,
+      icon: ShieldCheck,
+    },
+    {
+      label: tCommon('navigation.contact'),
+      href: `/${locale}/contact`,
+      icon: Mail,
+    },
   ];
 
-  // Focus trap and escape key handling
+  // Body scroll lock and focus management
   useEffect(() => {
-    if (isOpen) {
-      // Store the currently focused element
-      previousActiveElement.current = document.activeElement as HTMLElement;
-      
-      // Focus the close button when menu opens
-      closeButtonRef.current?.focus();
-      
-      // Prevent body scroll
+    if (menuOpen) {
+      previousActiveElement.current =
+        document.activeElement as HTMLElement;
+
       document.body.style.overflow = 'hidden';
+
+      requestAnimationFrame(() => {
+        closeButtonRef.current?.focus();
+      });
     } else {
       document.body.style.overflow = '';
-      
-      // Restore focus to the previously focused element
-      if (previousActiveElement.current) {
-        previousActiveElement.current.focus();
-      }
     }
 
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [menuOpen]);
 
-  // Handle keyboard navigation with focus trap
+  // Restore focus after closing
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isOpen) return;
+    if (!menuOpen && previousActiveElement.current) {
+      previousActiveElement.current.focus();
+      previousActiveElement.current = null;
+    }
+  }, [menuOpen]);
 
+  // Keyboard support and focus trap
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        closeMenu();
         return;
       }
 
-      // Focus trap - Tab key handling
       if (event.key === 'Tab' && menuRef.current) {
-        const focusableElements = getFocusableElements(menuRef.current);
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
+        const elements = getFocusableElements(menuRef.current);
 
-        if (event.shiftKey) {
-          // Shift + Tab
-          if (document.activeElement === firstElement) {
-            event.preventDefault();
-            lastElement?.focus();
-          }
-        } else {
-          // Tab
-          if (document.activeElement === lastElement) {
-            event.preventDefault();
-            firstElement?.focus();
-          }
+        if (!elements.length) return;
+
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+
+        if (
+          event.shiftKey &&
+          document.activeElement === first
+        ) {
+          event.preventDefault();
+          last.focus();
+        } else if (
+          !event.shiftKey &&
+          document.activeElement === last
+        ) {
+          event.preventDefault();
+          first.focus();
         }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
 
-  // Touch gesture handling for swipe to close
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
-  }, []);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [menuOpen, closeMenu]);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStart === null) return;
-    
-    const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchStart - touchEnd;
-    
-    // Swipe left to close (for LTR) - threshold of 100px
-    if (diff > 100) {
-      onClose();
-    }
-    
-    setTouchStart(null);
-  }, [touchStart, onClose]);
+  // Swipe to close
+  const handleTouchStart = useCallback(
+    (event: React.TouchEvent) => {
+      touchStart.current = event.touches[0].clientX;
+    },
+    []
+  );
 
-  const handleCategoryToggle = useCallback((categoryId: string) => {
-    setExpandedCategory((prev) => (prev === categoryId ? null : categoryId));
-  }, []);
+  const handleTouchEnd = useCallback(
+    (event: React.TouchEvent) => {
+      if (touchStart.current === null) return;
 
+      const touchEnd = event.changedTouches[0].clientX;
+      const difference = touchStart.current - touchEnd;
+
+      if (difference > 100) {
+        closeMenu();
+      }
+
+      touchStart.current = null;
+    },
+    [closeMenu]
+  );
+
+  // Close after navigation
   const handleLinkClick = useCallback(() => {
-    onClose();
-    setExpandedCategory(null);
-  }, [onClose]);
+    closeMenu();
+  }, [closeMenu]);
 
-  if (!isOpen) return null;
+  // Expand Tools submenu
+  const toggleTools = useCallback(() => {
+    setExpandedCategory((previous) =>
+      previous === 'tools' ? null : 'tools'
+    );
+  }, []);
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40 md:hidden"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      {/* MOBILE HAMBURGER BUTTON - THREE HORIZONTAL LINES */}
+      <button
+        type="button"
+        onClick={openMenu}
+        className="
+          md:hidden
+          inline-flex items-center justify-center
+          h-10 w-10 min-w-10
+          rounded-xl
+          border border-[hsl(var(--color-border))]
+          bg-[hsl(var(--color-background))]
+          text-[hsl(var(--color-foreground))]
+          hover:bg-[hsl(var(--color-muted))]
+          active:scale-95
+          transition-all
+          focus-visible:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-[hsl(var(--color-primary))]
+        "
+        aria-label="Open navigation menu"
+        aria-haspopup="dialog"
+        aria-expanded={menuOpen}
+      >
+        <Menu
+          className="h-6 w-6"
+          strokeWidth={2.2}
+          aria-hidden="true"
+        />
+      </button>
 
-      {/* Slide-in Menu */}
+      {/* BACKDROP */}
+      {menuOpen && (
+        <div
+          className="
+            fixed inset-0
+            bg-black/50 backdrop-blur-[2px]
+            z-[9998] md:hidden
+          "
+          onClick={closeMenu}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* MOBILE MENU DRAWER */}
       <div
         ref={menuRef}
         className={`
-          fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-[hsl(var(--color-background))] 
-          shadow-xl z-50 md:hidden
-          transform transition-transform duration-300 ease-in-out
-          ${isOpen ? 'translate-x-0' : 'translate-x-full'}
+          fixed top-0 right-0
+          h-[100dvh]
+          w-[340px] max-w-[88vw]
+          bg-[hsl(var(--color-background))]
+          border-l border-[hsl(var(--color-border))]
+          shadow-2xl
+          z-[9999] md:hidden
+          flex flex-col
+          transition-transform duration-300 ease-in-out
+          ${menuOpen ? 'translate-x-0' : 'translate-x-full'}
+          ${!menuOpen ? 'pointer-events-none invisible' : 'visible'}
         `}
         role="dialog"
         aria-modal="true"
@@ -176,81 +349,243 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, locale 
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[hsl(var(--color-border))]">
-          <span className="text-lg font-bold text-[hsl(var(--color-primary))]">
-            {tCommon('brand')}
-          </span>
-          <Button
-            ref={closeButtonRef}
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            aria-label={tCommon('buttons.close')}
+        {/* HEADER */}
+        <div
+          className="
+            flex items-center justify-between
+            p-4
+            border-b border-[hsl(var(--color-border))]
+            shrink-0
+          "
+        >
+          <Link
+            href={`/${locale}`}
+            onClick={handleLinkClick}
+            className="flex items-center gap-2"
           >
-            <X className="h-5 w-5" aria-hidden="true" />
-          </Button>
+            <span className="
+              text-xl font-bold
+              text-[hsl(var(--color-foreground))]
+            ">
+              PDFTara
+            </span>
+
+            <span className="
+              text-[10px] font-semibold
+              px-2 py-0.5 rounded-full
+              bg-[hsl(var(--color-primary)/0.1)]
+              text-[hsl(var(--color-primary))]
+            ">
+              MENU
+            </span>
+          </Link>
+
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={closeMenu}
+            className="
+              flex items-center justify-center
+              h-10 w-10 rounded-xl
+              hover:bg-[hsl(var(--color-muted))]
+              transition-colors
+              focus-visible:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-[hsl(var(--color-primary))]
+            "
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 overflow-y-auto h-[calc(100%-64px)]" aria-label="Mobile navigation">
+        {/* NAVIGATION */}
+        <nav
+          className="
+            flex-1 overflow-y-auto
+            overscroll-contain p-4
+          "
+          aria-label="Mobile navigation"
+        >
+          <p className="
+            px-4 mb-3
+            text-xs font-semibold uppercase tracking-wider
+            text-[hsl(var(--color-muted-foreground))]
+          ">
+            Main Navigation
+          </p>
+
           <ul className="flex flex-col gap-1">
-            {mainNavItems.map((item) => (
-              <li key={item.href}>
-                {item.hasSubmenu ? (
-                  <div>
-                    <button
-                      onClick={() => handleCategoryToggle('tools')}
-                      className="flex items-center justify-between w-full px-4 py-3 text-left text-[hsl(var(--color-foreground))] hover:bg-[hsl(var(--color-muted))] rounded-[var(--radius-md)] transition-colors"
-                      aria-expanded={expandedCategory === 'tools'}
-                    >
-                      <span className="font-medium">{item.label}</span>
-                      {expandedCategory === 'tools' ? (
-                        <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                      )}
-                    </button>
-                    
-                    {/* Submenu */}
-                    {expandedCategory === 'tools' && (
-                      <ul className="ml-4 mt-1 border-l-2 border-[hsl(var(--color-border))]">
-                        <li>
-                          <Link
-                            href={item.href}
-                            className="block px-4 py-2 text-sm text-[hsl(var(--color-foreground))] hover:text-[hsl(var(--color-primary))] hover:bg-[hsl(var(--color-muted))] rounded-[var(--radius-md)] transition-colors"
-                            onClick={handleLinkClick}
-                          >
-                            All Tools
-                          </Link>
-                        </li>
-                        {categories.map((category) => (
-                          <li key={category.id}>
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <li key={item.href}>
+                  {item.submenu ? (
+                    <div>
+                      {/* TOOLS BUTTON */}
+                      <button
+                        type="button"
+                        onClick={toggleTools}
+                        className="
+                          flex items-center justify-between
+                          w-full px-4 py-3
+                          rounded-xl
+                          text-[hsl(var(--color-foreground))]
+                          hover:bg-[hsl(var(--color-muted))]
+                          transition-colors
+                        "
+                        aria-expanded={
+                          expandedCategory === 'tools'
+                        }
+                      >
+                        <span className="flex items-center gap-3">
+                          <Icon className="
+                            h-5 w-5
+                            text-[hsl(var(--color-muted-foreground))]
+                          " />
+
+                          <span className="font-medium">
+                            {item.label}
+                          </span>
+                        </span>
+
+                        {expandedCategory === 'tools' ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </button>
+
+                      {/* TOOLS SUBMENU */}
+                      {expandedCategory === 'tools' && (
+                        <ul className="
+                          ml-6 mt-1 mb-2
+                          pl-3
+                          border-l-2
+                          border-[hsl(var(--color-border))]
+                        ">
+                          <li>
                             <Link
-                              href={category.href}
-                              className="block px-4 py-2 text-sm text-[hsl(var(--color-muted-foreground))] hover:text-[hsl(var(--color-primary))] hover:bg-[hsl(var(--color-muted))] rounded-[var(--radius-md)] transition-colors"
+                              href={item.href}
                               onClick={handleLinkClick}
+                              className="
+                                block px-4 py-2.5
+                                rounded-lg text-sm font-semibold
+                                text-[hsl(var(--color-primary))]
+                                hover:bg-[hsl(var(--color-muted))]
+                              "
                             >
-                              {t(category.labelKey)}
+                              All PDF Tools
                             </Link>
                           </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ) : (
-                  <Link
-                    href={item.href}
-                    className="block px-4 py-3 font-medium text-[hsl(var(--color-foreground))] hover:bg-[hsl(var(--color-muted))] rounded-[var(--radius-md)] transition-colors"
-                    onClick={handleLinkClick}
-                  >
-                    {item.label}
-                  </Link>
-                )}
-              </li>
-            ))}
+
+                          {categories.map((category) => (
+                            <li key={category.id}>
+                              <Link
+                                href={category.href}
+                                onClick={handleLinkClick}
+                                className="
+                                  block px-4 py-2.5
+                                  rounded-lg text-sm
+                                  text-[hsl(var(--color-muted-foreground))]
+                                  hover:text-[hsl(var(--color-primary))]
+                                  hover:bg-[hsl(var(--color-muted))]
+                                  transition-colors
+                                "
+                              >
+                                {t(category.labelKey)}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ) : (
+                    /* NORMAL NAVIGATION LINK */
+                    <Link
+                      href={item.href}
+                      onClick={handleLinkClick}
+                      className="
+                        flex items-center justify-between
+                        px-4 py-3
+                        rounded-xl
+                        text-[hsl(var(--color-foreground))]
+                        hover:bg-[hsl(var(--color-muted))]
+                        transition-colors
+                      "
+                    >
+                      <span className="flex items-center gap-3">
+                        <Icon className="
+                          h-5 w-5
+                          text-[hsl(var(--color-muted-foreground))]
+                        " />
+
+                        <span className="font-medium">
+                          {item.label}
+                        </span>
+                      </span>
+
+                      {item.badge && (
+                        <span className="
+                          text-[10px] font-bold
+                          px-2 py-1 rounded-full
+                          bg-blue-600 text-white
+                        ">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
           </ul>
+
+          {/* PRIVACY CARD */}
+          <div className="
+            mt-6 p-4 rounded-xl
+            border border-[hsl(var(--color-border))]
+            bg-[hsl(var(--color-muted)/0.3)]
+          ">
+            <div className="flex items-center gap-2 mb-2">
+              <Lock className="h-4 w-4 text-green-500" />
+
+              <span className="font-semibold text-sm">
+                100% Private
+              </span>
+            </div>
+
+            <p className="
+              text-xs leading-relaxed
+              text-[hsl(var(--color-muted-foreground))]
+            ">
+              Your files never leave your device.
+              Process PDFs privately in your browser.
+            </p>
+          </div>
         </nav>
+
+        {/* FOOTER */}
+        <div className="
+          shrink-0 p-4
+          border-t border-[hsl(var(--color-border))]
+          text-center
+        ">
+          <p className="
+            text-xs
+            text-[hsl(var(--color-muted-foreground))]
+          ">
+            © {new Date().getFullYear()} PDFTara
+          </p>
+
+          <p className="
+            text-xs mt-1
+            text-[hsl(var(--color-muted-foreground))]
+          ">
+            Free & Private PDF Tools
+          </p>
+        </div>
       </div>
     </>
   );
