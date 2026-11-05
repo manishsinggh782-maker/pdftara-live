@@ -167,22 +167,22 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
 
   return (
     <header
-      className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled
-        ? 'bg-[hsl(var(--color-background))]/80 backdrop-blur-md border-b border-[hsl(var(--color-border))/0.5] shadow-sm'
+      className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled || isMobileMenuOpen
+        ? 'bg-[hsl(var(--color-background))]/90 backdrop-blur-md border-b border-[hsl(var(--color-border))/0.5] shadow-sm'
         : 'bg-transparent border-transparent'
         }`}
       role="banner"
     >
       <div className="container mx-auto px-4">
-        <div className="flex h-20 items-center justify-between">
+        <div className="flex h-16 sm:h-20 items-center justify-between gap-2">
           {/* Logo and Brand */}
-          <div className="flex flex-1 items-center gap-2">
+          <div className="flex flex-1 min-w-0 items-center gap-2">
             <Link
               href={`/${locale}`}
-              className="group flex items-center gap-2.5 text-xl font-bold text-[hsl(var(--color-foreground))] hover:opacity-90 transition-opacity"
+              className="group flex min-w-0 items-center gap-2 sm:gap-2.5 text-xl font-bold text-[hsl(var(--color-foreground))] hover:opacity-90 transition-opacity"
               aria-label={`${t('brand')} - ${t('navigation.home')}`}
             >
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--color-primary))] to-[hsl(var(--color-accent))] shadow-lg shadow-primary/25 transition-transform group-hover:scale-105">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--color-primary))] to-[hsl(var(--color-accent))] shadow-lg shadow-primary/25 transition-transform group-hover:scale-105">
                 <svg
                   className="h-5 w-5 text-white"
                   viewBox="0 0 24 24"
@@ -196,7 +196,7 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
               </div>
-              <span className="text-xl tracking-tight" data-testid="brand-name">
+              <span className="truncate text-lg sm:text-xl tracking-tight" data-testid="brand-name">
                 {t('brand')}
               </span>
             </Link>
@@ -233,12 +233,12 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
           </nav>
 
           {/* Right side actions */}
-          <div className="flex flex-1 items-center justify-end gap-3">
+          <div className="flex shrink-0 md:flex-1 items-center justify-end gap-1 sm:gap-3">
             {/* Search */}
             {showSearch && (
               <div className="relative" ref={searchContainerRef}>
                 {isSearchOpen ? (
-                  <div className="fixed md:absolute left-4 right-4 md:left-auto md:right-0 top-[22px] md:top-1/2 md:-translate-y-1/2 z-50 md:origin-right animate-in fade-in slide-in-from-right-4 duration-200">
+                  <div className="fixed md:absolute left-4 right-4 md:left-auto md:right-0 top-[14px] sm:top-[22px] md:top-1/2 md:-translate-y-1/2 z-50 md:origin-right animate-in fade-in slide-in-from-right-4 duration-200">
                     <div className="relative w-full md:w-96">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[hsl(var(--color-muted-foreground))]" />
                       <input
@@ -319,19 +319,23 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
               </div>
             )}
 
-            {/* Recent Files Dropdown */}
-            <RecentFilesDropdown
-              locale={locale}
-              translations={{
-                title: t('recentFiles.title') || 'Recent Files',
-                empty: t('recentFiles.empty') || 'No recent files',
-                clearAll: t('recentFiles.clearAll') || 'Clear all',
-                processedWith: t('recentFiles.processedWith') || 'Processed with',
-              }}
-            />
+            {/* Recent Files Dropdown (mobile par chhupa, badi screen par dikhta hai) */}
+            <div className="hidden sm:block">
+              <RecentFilesDropdown
+                locale={locale}
+                translations={{
+                  title: t('recentFiles.title') || 'Recent Files',
+                  empty: t('recentFiles.empty') || 'No recent files',
+                  clearAll: t('recentFiles.clearAll') || 'Clear all',
+                  processedWith: t('recentFiles.processedWith') || 'Processed with',
+                }}
+              />
+            </div>
 
-            {/* Update Check Button */}
-            <UpdateCheckButton />
+            {/* Update Check Button (mobile par chhupa) */}
+            <div className="hidden sm:block">
+              <UpdateCheckButton />
+            </div>
 
             {/* Theme Toggle */}
             <ThemeToggle />
@@ -339,22 +343,21 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
             {/* Language Selector placeholder */}
             <div id="language-selector-slot" />
 
-            {/* Mobile Menu Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden"
+            {/* Mobile Menu Toggle (3 lines, hamesha dikhega) */}
+            <button
+              type="button"
+              className="md:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-background))] text-[hsl(var(--color-foreground))] transition-colors hover:bg-[hsl(var(--color-muted))]"
               onClick={handleMobileMenuToggle}
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
             >
               {isMobileMenuOpen ? (
-                <X className="h-5 w-5" aria-hidden="true" />
+                <X className="h-6 w-6" strokeWidth={2.5} aria-hidden="true" />
               ) : (
-                <Menu className="h-5 w-5" aria-hidden="true" />
+                <Menu className="h-6 w-6" strokeWidth={2.5} aria-hidden="true" />
               )}
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -362,11 +365,11 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
         {isMobileMenuOpen && (
           <nav
             id="mobile-menu"
-            className="md:hidden py-4 border-t border-[hsl(var(--color-border))] bg-[hsl(var(--color-background))] backdrop-blur-xl shadow-lg"
+            className="md:hidden py-3 border-t border-[hsl(var(--color-border))] bg-[hsl(var(--color-background))] backdrop-blur-xl shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto"
             role="navigation"
             aria-label="Mobile navigation"
           >
-            <ul className="flex flex-col gap-2 p-2">
+            <ul className="flex flex-col gap-1.5 p-2">
               {navItems.map((item) => {
                 const isStudio = item.href.endsWith('/studio');
                 return (

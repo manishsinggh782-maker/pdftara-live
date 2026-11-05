@@ -1,7 +1,7 @@
-
 'use client';
 
 import React, { useEffect, useRef, useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Mail,
   Lock,
+  Monitor,
 } from 'lucide-react';
 
 import { type Locale } from '@/lib/i18n/config';
@@ -47,9 +48,7 @@ const getFocusableElements = (container: HTMLElement): HTMLElement[] => {
     '[tabindex]:not([tabindex="-1"])',
   ].join(', ');
 
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(selectors)
-  );
+  return Array.from(container.querySelectorAll<HTMLElement>(selectors));
 };
 
 export const MobileMenu: React.FC<MobileMenuProps> = ({
@@ -66,15 +65,17 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const touchStart = useRef<number | null>(null);
 
+  const [mounted, setMounted] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(
-    null
-  );
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-  const isControlled =
-    isOpen !== undefined && onOpen !== undefined;
-
+  const isControlled = isOpen !== undefined && onOpen !== undefined;
   const menuOpen = isControlled ? isOpen : internalOpen;
+
+  // Portal ke liye (server render me document nahi hota)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Open menu
   const openMenu = useCallback(() => {
@@ -127,7 +128,13 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   ];
 
   // Main Navigation
-  const navigationItems = [
+  const navigationItems: Array<{
+    label: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: string;
+    submenu?: boolean;
+  }> = [
     {
       label: tCommon('navigation.home'),
       href: `/${locale}`,
@@ -137,6 +144,12 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
       label: 'Studio',
       href: `/${locale}/studio`,
       icon: Sparkles,
+      badge: 'NEW',
+    },
+    {
+      label: 'Desktop App',
+      href: `/${locale}/desktop`,
+      icon: Monitor,
       badge: 'NEW',
     },
     {
@@ -180,8 +193,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   // Body scroll lock and focus management
   useEffect(() => {
     if (menuOpen) {
-      previousActiveElement.current =
-        document.activeElement as HTMLElement;
+      previousActiveElement.current = document.activeElement as HTMLElement;
 
       document.body.style.overflow = 'hidden';
 
@@ -223,16 +235,10 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         const first = elements[0];
         const last = elements[elements.length - 1];
 
-        if (
-          event.shiftKey &&
-          document.activeElement === first
-        ) {
+        if (event.shiftKey && document.activeElement === first) {
           event.preventDefault();
           last.focus();
-        } else if (
-          !event.shiftKey &&
-          document.activeElement === last
-        ) {
+        } else if (!event.shiftKey && document.activeElement === last) {
           event.preventDefault();
           first.focus();
         }
@@ -246,20 +252,17 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
     };
   }, [menuOpen, closeMenu]);
 
-  // Swipe to close
-  const handleTouchStart = useCallback(
-    (event: React.TouchEvent) => {
-      touchStart.current = event.touches[0].clientX;
-    },
-    []
-  );
+  // Swipe to close (drawer right se aata hai, isliye RIGHT swipe se band hoga)
+  const handleTouchStart = useCallback((event: React.TouchEvent) => {
+    touchStart.current = event.touches[0].clientX;
+  }, []);
 
   const handleTouchEnd = useCallback(
     (event: React.TouchEvent) => {
       if (touchStart.current === null) return;
 
       const touchEnd = event.changedTouches[0].clientX;
-      const difference = touchStart.current - touchEnd;
+      const difference = touchEnd - touchStart.current;
 
       if (difference > 100) {
         closeMenu();
@@ -277,43 +280,12 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
 
   // Expand Tools submenu
   const toggleTools = useCallback(() => {
-    setExpandedCategory((previous) =>
-      previous === 'tools' ? null : 'tools'
-    );
+    setExpandedCategory((previous) => (previous === 'tools' ? null : 'tools'));
   }, []);
 
-  return (
+  // Backdrop + Drawer (portal me render hoga)
+  const drawer = (
     <>
-      {/* MOBILE HAMBURGER BUTTON - THREE HORIZONTAL LINES */}
-      <button
-        type="button"
-        onClick={openMenu}
-        className="
-          md:hidden
-          inline-flex items-center justify-center
-          h-10 w-10 min-w-10
-          rounded-xl
-          border border-[hsl(var(--color-border))]
-          bg-[hsl(var(--color-background))]
-          text-[hsl(var(--color-foreground))]
-          hover:bg-[hsl(var(--color-muted))]
-          active:scale-95
-          transition-all
-          focus-visible:outline-none
-          focus-visible:ring-2
-          focus-visible:ring-[hsl(var(--color-primary))]
-        "
-        aria-label="Open navigation menu"
-        aria-haspopup="dialog"
-        aria-expanded={menuOpen}
-      >
-        <Menu
-          className="h-6 w-6"
-          strokeWidth={2.2}
-          aria-hidden="true"
-        />
-      </button>
-
       {/* BACKDROP */}
       {menuOpen && (
         <div
@@ -363,19 +335,23 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
             onClick={handleLinkClick}
             className="flex items-center gap-2"
           >
-            <span className="
-              text-xl font-bold
-              text-[hsl(var(--color-foreground))]
-            ">
+            <span
+              className="
+                text-xl font-bold
+                text-[hsl(var(--color-foreground))]
+              "
+            >
               PDFTara
             </span>
 
-            <span className="
-              text-[10px] font-semibold
-              px-2 py-0.5 rounded-full
-              bg-[hsl(var(--color-primary)/0.1)]
-              text-[hsl(var(--color-primary))]
-            ">
+            <span
+              className="
+                text-[10px] font-semibold
+                px-2 py-0.5 rounded-full
+                bg-[hsl(var(--color-primary)/0.1)]
+                text-[hsl(var(--color-primary))]
+              "
+            >
               MENU
             </span>
           </Link>
@@ -407,11 +383,13 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           "
           aria-label="Mobile navigation"
         >
-          <p className="
-            px-4 mb-3
-            text-xs font-semibold uppercase tracking-wider
-            text-[hsl(var(--color-muted-foreground))]
-          ">
+          <p
+            className="
+              px-4 mb-3
+              text-xs font-semibold uppercase tracking-wider
+              text-[hsl(var(--color-muted-foreground))]
+            "
+          >
             Main Navigation
           </p>
 
@@ -435,19 +413,17 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
                           hover:bg-[hsl(var(--color-muted))]
                           transition-colors
                         "
-                        aria-expanded={
-                          expandedCategory === 'tools'
-                        }
+                        aria-expanded={expandedCategory === 'tools'}
                       >
                         <span className="flex items-center gap-3">
-                          <Icon className="
-                            h-5 w-5
-                            text-[hsl(var(--color-muted-foreground))]
-                          " />
+                          <Icon
+                            className="
+                              h-5 w-5
+                              text-[hsl(var(--color-muted-foreground))]
+                            "
+                          />
 
-                          <span className="font-medium">
-                            {item.label}
-                          </span>
+                          <span className="font-medium">{item.label}</span>
                         </span>
 
                         {expandedCategory === 'tools' ? (
@@ -459,12 +435,14 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
 
                       {/* TOOLS SUBMENU */}
                       {expandedCategory === 'tools' && (
-                        <ul className="
-                          ml-6 mt-1 mb-2
-                          pl-3
-                          border-l-2
-                          border-[hsl(var(--color-border))]
-                        ">
+                        <ul
+                          className="
+                            ml-6 mt-1 mb-2
+                            pl-3
+                            border-l-2
+                            border-[hsl(var(--color-border))]
+                          "
+                        >
                           <li>
                             <Link
                               href={item.href}
@@ -516,22 +494,24 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
                       "
                     >
                       <span className="flex items-center gap-3">
-                        <Icon className="
-                          h-5 w-5
-                          text-[hsl(var(--color-muted-foreground))]
-                        " />
+                        <Icon
+                          className="
+                            h-5 w-5
+                            text-[hsl(var(--color-muted-foreground))]
+                          "
+                        />
 
-                        <span className="font-medium">
-                          {item.label}
-                        </span>
+                        <span className="font-medium">{item.label}</span>
                       </span>
 
                       {item.badge && (
-                        <span className="
-                          text-[10px] font-bold
-                          px-2 py-1 rounded-full
-                          bg-blue-600 text-white
-                        ">
+                        <span
+                          className="
+                            text-[10px] font-bold
+                            px-2 py-1 rounded-full
+                            bg-blue-600 text-white
+                          "
+                        >
                           {item.badge}
                         </span>
                       )}
@@ -543,50 +523,91 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           </ul>
 
           {/* PRIVACY CARD */}
-          <div className="
-            mt-6 p-4 rounded-xl
-            border border-[hsl(var(--color-border))]
-            bg-[hsl(var(--color-muted)/0.3)]
-          ">
+          <div
+            className="
+              mt-6 p-4 rounded-xl
+              border border-[hsl(var(--color-border))]
+              bg-[hsl(var(--color-muted)/0.3)]
+            "
+          >
             <div className="flex items-center gap-2 mb-2">
               <Lock className="h-4 w-4 text-green-500" />
 
-              <span className="font-semibold text-sm">
-                100% Private
-              </span>
+              <span className="font-semibold text-sm">100% Private</span>
             </div>
 
-            <p className="
-              text-xs leading-relaxed
-              text-[hsl(var(--color-muted-foreground))]
-            ">
-              Your files never leave your device.
-              Process PDFs privately in your browser.
+            <p
+              className="
+                text-xs leading-relaxed
+                text-[hsl(var(--color-muted-foreground))]
+              "
+            >
+              Your files never leave your device. Process PDFs privately in
+              your browser.
             </p>
           </div>
         </nav>
 
         {/* FOOTER */}
-        <div className="
-          shrink-0 p-4
-          border-t border-[hsl(var(--color-border))]
-          text-center
-        ">
-          <p className="
-            text-xs
-            text-[hsl(var(--color-muted-foreground))]
-          ">
+        <div
+          className="
+            shrink-0 p-4
+            border-t border-[hsl(var(--color-border))]
+            text-center
+          "
+        >
+          <p
+            className="
+              text-xs
+              text-[hsl(var(--color-muted-foreground))]
+            "
+          >
             © {new Date().getFullYear()} PDFTara
           </p>
 
-          <p className="
-            text-xs mt-1
-            text-[hsl(var(--color-muted-foreground))]
-          ">
+          <p
+            className="
+              text-xs mt-1
+              text-[hsl(var(--color-muted-foreground))]
+            "
+          >
             Free & Private PDF Tools
           </p>
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* MOBILE HAMBURGER BUTTON - THREE HORIZONTAL LINES */}
+      <button
+        type="button"
+        onClick={openMenu}
+        className="
+          md:hidden
+          inline-flex items-center justify-center
+          h-10 w-10 shrink-0
+          rounded-xl
+          border border-[hsl(var(--color-border))]
+          bg-[hsl(var(--color-background))]
+          text-[hsl(var(--color-foreground))]
+          hover:bg-[hsl(var(--color-muted))]
+          active:scale-95
+          transition-all
+          focus-visible:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-[hsl(var(--color-primary))]
+        "
+        aria-label="Open navigation menu"
+        aria-haspopup="dialog"
+        aria-expanded={menuOpen}
+      >
+        <Menu className="h-6 w-6" strokeWidth={2.2} aria-hidden="true" />
+      </button>
+
+      {/* Drawer ko body me render karo, taaki header ka blur use na kaate */}
+      {mounted ? createPortal(drawer, document.body) : null}
     </>
   );
 };

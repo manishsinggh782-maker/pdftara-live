@@ -16,7 +16,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Har 1 ghante mein update hoga
 export const revalidate = 3600; 
 
-const BASE_URL = 'https://www.pdftara.com/';
+const BASE_URL = 'https://www.pdftara.com';
 
 const PRIORITY = {
   home: 1.0,
