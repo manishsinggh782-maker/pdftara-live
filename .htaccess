@@ -1,9 +1,12 @@
-# Apache .htaccess configuration for PDFTara static export
 
-# Enable rewrite engine
+# ==========================================
+# PDFTara - Apache .htaccess
+# AdSense Compatibility + LibreOffice WASM
+# ==========================================
+
 RewriteEngine On
 
-# Handle trailing slash routing (matches Next.js trailingSlash: true config)
+# Trailing slash routing
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteCond %{REQUEST_URI} !/$
 RewriteRule ^(.*)$ /$1/ [R=301,L]
@@ -17,6 +20,7 @@ RewriteRule ^([^\.]+)$ $1.html [NC,L]
 # ==========================================
 # MIME Type Configuration
 # ==========================================
+
 AddType application/wasm .wasm
 AddType application/javascript .mjs
 AddType image/webp .webp
@@ -27,8 +31,9 @@ AddType font/ttf .ttf
 AddType application/vnd.ms-fontobject .eot
 
 # ==========================================
-# Compression (mod_deflate)
+# Compression
 # ==========================================
+
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/plain text/html text/xml text/css
     AddOutputFilterByType DEFLATE text/javascript application/javascript application/x-javascript
@@ -39,8 +44,9 @@ AddType application/vnd.ms-fontobject .eot
 </IfModule>
 
 # ==========================================
-# Caching (mod_expires)
+# Caching
 # ==========================================
+
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresDefault "access plus 1 month"
@@ -77,46 +83,67 @@ AddType application/vnd.ms-fontobject .eot
 </IfModule>
 
 # ==========================================
-# Cache-Control & Security Headers (mod_headers)
+# Cache-Control & Security Headers
 # ==========================================
+
 <IfModule mod_headers.c>
-    # --- Security Headers (all responses) ---
+
+    # Security Headers
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-    # Required for SharedArrayBuffer (LibreOffice WASM)
-    Header always set Cross-Origin-Opener-Policy "same-origin"
-    Header always set Cross-Origin-Embedder-Policy "require-corp"
+
+    # Allow cross-origin resource sharing policy
     Header always set Cross-Origin-Resource-Policy "cross-origin"
 
-    # --- Cache-Control ---
+    # IMPORTANT:
+    # COOP same-origin removed
+    # COEP require-corp removed
+    # Avoid site-wide Cross-Origin Isolation restrictions
+    # for better third-party advertising compatibility.
+
+    # Cache static assets
     <FilesMatch "\.(js|css|mjs|woff|woff2|ttf|eot|png|jpg|jpeg|gif|ico|svg|webp|avif|wasm)$">
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
 
+    # HTML - always revalidate
     <FilesMatch "\.html$">
         Header set Cache-Control "public, max-age=0, must-revalidate"
     </FilesMatch>
 
+    # Service Worker
     <FilesMatch "sw\.js$">
         Header set Cache-Control "public, max-age=0, must-revalidate"
     </FilesMatch>
 
+    # Manifest
     <FilesMatch "manifest\.json$">
         Header set Cache-Control "public, max-age=3600"
     </FilesMatch>
+
 </IfModule>
 
+# ==========================================
 # Error Documents
+# ==========================================
+
 ErrorDocument 404 /404.html
 
+# ==========================================
 # Prevent Directory Listing
+# ==========================================
+
 Options -Indexes
 
+# ==========================================
 # Disable ETags
+# ==========================================
+
 <IfModule mod_headers.c>
     Header unset ETag
 </IfModule>
+
 FileETag None
