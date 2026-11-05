@@ -150,23 +150,26 @@ stdenv.mkDerivation {
           root PDFTara_ROOT;
           index index.html;
 
+          # NO COOP/COEP at server level, so Google ads load on home, blog, tools
           add_header X-Content-Type-Options "nosniff" always;
           add_header X-Frame-Options "SAMEORIGIN" always;
           add_header X-XSS-Protection "1; mode=block" always;
           add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-          add_header Cross-Origin-Opener-Policy "same-origin" always;
-          add_header Cross-Origin-Embedder-Policy "require-corp" always;
           add_header Cross-Origin-Resource-Policy "cross-origin" always;
 
           location ~* \.(ico|jpg|jpeg|png|gif|svg|webp|avif|woff|woff2|ttf|eot)$ {
             expires 1y;
             add_header Cache-Control "public, max-age=31536000, immutable";
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header Cross-Origin-Resource-Policy "cross-origin" always;
             access_log off;
           }
 
           location ~* \.(js|css|mjs)$ {
             expires 1y;
             add_header Cache-Control "public, max-age=31536000, immutable";
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header Cross-Origin-Resource-Policy "cross-origin" always;
             access_log off;
           }
 
@@ -174,6 +177,8 @@ stdenv.mkDerivation {
             gzip_static on;
             expires 1y;
             add_header Cache-Control "public, max-age=31536000, immutable";
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header Cross-Origin-Resource-Policy "cross-origin" always;
             types {
               application/wasm wasm;
               application/javascript js;
@@ -181,9 +186,28 @@ stdenv.mkDerivation {
             }
           }
 
+          # OPTIONAL: only the LibreOffice editor page needs COOP/COEP (SharedArrayBuffer).
+          # Change /editor/ to your real route. Ads will NOT work on this page.
+          # If your LibreOffice build is single-thread, delete this whole block.
+          location ^~ /editor/ {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "SAMEORIGIN" always;
+            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+            add_header Cross-Origin-Resource-Policy "cross-origin" always;
+            add_header Cross-Origin-Opener-Policy "same-origin" always;
+            add_header Cross-Origin-Embedder-Policy "require-corp" always;
+            add_header Cache-Control "public, max-age=0, must-revalidate";
+            try_files $uri $uri.html $uri/ =404;
+          }
+
           location / {
             try_files $uri $uri.html $uri/ =404;
             add_header Cache-Control "public, max-age=0, must-revalidate";
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "SAMEORIGIN" always;
+            add_header X-XSS-Protection "1; mode=block" always;
+            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+            add_header Cross-Origin-Resource-Policy "cross-origin" always;
           }
 
           error_page 404 /404.html;
