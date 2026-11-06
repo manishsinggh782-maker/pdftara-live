@@ -2,14 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { localeConfig, type Locale, locales } from '@/lib/i18n/config';
+import { type Locale, locales } from '@/lib/i18n/config';
 import { generateHomeMetadata } from '@/lib/seo';
-import { fontVariables } from '@/lib/fonts';
 import { SkipLink } from '@/components/common/SkipLink';
-import { GoogleScripts } from '@/components/GoogleScripts';
-
-// CSS Path fix
-import '../globals.css';
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -189,121 +184,93 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
   const messages = await getMessages();
-  const direction = localeConfig[locale as Locale]?.direction || 'ltr';
 
-  const softwareSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    'name': 'PDFTara Free PDF Tools',
-    'url': 'https://www.pdftara.com/',
-    'applicationCategory': 'MultimediaApplication',
-    'operatingSystem': 'Web, Windows, macOS, Android, iOS',
-    'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
-    'aggregateRating': { '@type': 'AggregateRating', 'ratingValue': '4.9', 'ratingCount': '18540', 'bestRating': '5', 'worstRating': '1' }
-  };
-
-  const desktopSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    'name': 'PDFTara Studio',
-    'alternateName': 'PDFTara Desktop App',
-    'url': `https://www.pdftara.com/${locale}/desktop/`,
-    'downloadUrl': `https://www.pdftara.com/${locale}/desktop/`,
-    'applicationCategory': 'BusinessApplication',
-    'applicationSubCategory': 'PDF Editor',
-    'operatingSystem': 'Windows 10, Windows 11, macOS, Linux',
-    'description': 'Free, private desktop PDF app with 53+ tools, visual workflow studio, offline AI copilot and in-place text editing. Files are processed on your device.',
-    'image': 'https://www.pdftara.com/images/desktop/home.png',
-    'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
-    'publisher': { '@type': 'Organization', 'name': 'PDFTara', 'url': 'https://www.pdftara.com/' }
-  };
-
-  const studioSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    'name': 'PDFTara Studio (Web)',
-    'url': `https://www.pdftara.com/${locale}/studio/`,
-    'applicationCategory': 'BusinessApplication',
-    'operatingSystem': 'Web Browser',
-    'description': 'Open PDF Studio in your browser: view, edit, annotate and process PDFs privately. No upload, no signup.',
-    'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
-    'publisher': { '@type': 'Organization', 'name': 'PDFTara', 'url': 'https://www.pdftara.com/' }
-  };
-
-  const organizationSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    'name': 'PDFTara',
-    'url': 'https://www.pdftara.com/',
-    'logo': 'https://www.pdftara.com/images/logo.png',
-    'sameAs': [
-      'https://t.me/pdftara',
-      'https://www.youtube.com/@PDFtara',
-      'https://www.producthunt.com/products/pdftara-secure-free',
-      'https://www.trustpilot.com/review/pdftara.com'
-    ]
-  };
-
-  const websiteSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    'name': 'PDFTara',
-    'url': 'https://www.pdftara.com/',
-    'potentialAction': {
-      '@type': 'SearchAction',
-      'target': 'https://www.pdftara.com/search?q={search_term_string}',
-      'query-input': 'required name=search_term_string'
-    }
-  };
+  const schemas = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'PDFTara Free PDF Tools',
+      url: 'https://www.pdftara.com/',
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Web, Windows, macOS, Android, iOS',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: '4.9',
+        ratingCount: '18540',
+        bestRating: '5',
+        worstRating: '1',
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'PDFTara Studio',
+      alternateName: 'PDFTara Desktop App',
+      url: `https://www.pdftara.com/${locale}/desktop/`,
+      downloadUrl: `https://www.pdftara.com/${locale}/desktop/`,
+      applicationCategory: 'BusinessApplication',
+      applicationSubCategory: 'PDF Editor',
+      operatingSystem: 'Windows 10, Windows 11, macOS, Linux',
+      description:
+        'Free, private desktop PDF app with 53+ tools, visual workflow studio, offline AI copilot and in-place text editing. Files are processed on your device.',
+      image: 'https://www.pdftara.com/images/desktop/home.png',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      publisher: { '@type': 'Organization', name: 'PDFTara', url: 'https://www.pdftara.com/' },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'PDFTara Studio (Web)',
+      url: `https://www.pdftara.com/${locale}/studio/`,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web Browser',
+      description:
+        'Open PDF Studio in your browser: view, edit, annotate and process PDFs privately. No upload, no signup.',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      publisher: { '@type': 'Organization', name: 'PDFTara', url: 'https://www.pdftara.com/' },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'PDFTara',
+      url: 'https://www.pdftara.com/',
+      logo: 'https://www.pdftara.com/images/logo.png',
+      sameAs: [
+        'https://t.me/pdftara',
+        'https://www.youtube.com/@PDFtara',
+        'https://www.producthunt.com/products/pdftara-secure-free',
+        'https://www.trustpilot.com/review/pdftara.com',
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'PDFTara',
+      url: 'https://www.pdftara.com/',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: 'https://www.pdftara.com/search?q={search_term_string}',
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  ];
 
   return (
-    <html lang={locale} dir={direction} className={fontVariables} suppressHydrationWarning>
-      <head>
-        {/* coi-serviceworker REMOVED: it injected COOP/COEP, blocked Google ads
-            and caused page reloads. Do NOT add it back here. */}
-
-        {/* Google AdSense - Global (ONLY here, not in any other layout) */}
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      {schemas.map((schema, i) => (
         <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4129411618696895"
-          crossOrigin="anonymous"
-        ></script>
-
-        {/* AdSense verification */}
-        <meta name="google-adsense-account" content="ca-pub-4129411618696895" />
-
-        <script
+          key={i}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(desktopSchema) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(studioSchema) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
-        />
-        <GoogleScripts />
-      </head>
-      <body className="min-h-screen bg-background text-foreground antialiased font-sans">
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <SkipLink targetId="main-content">Skip to main content</SkipLink>
-          <div className="relative flex min-h-screen flex-col">
-            <main id="main-content" className="flex-1">
-              {children}
-            </main>
-          </div>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+      ))}
+      <SkipLink targetId="main-content">Skip to main content</SkipLink>
+      <div className="relative flex min-h-screen flex-col">
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
+      </div>
+    </NextIntlClientProvider>
   );
 }
