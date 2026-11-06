@@ -1,4 +1,3 @@
-
 import Script from 'next/script';
 import type { Metadata, Viewport } from 'next';
 import '@/app/globals.css';
@@ -110,24 +109,13 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
-        {/* COI Service Worker: Multithreading support */}
-        <Script
-          src="/coi-serviceworker.js"
-          strategy="beforeInteractive"
-        />
+        {/* coi-serviceworker REMOVED: it injected COEP and blocked Google ads */}
 
-        {/* TrustedSite Certification */}
-        <Script
-          src="https://cdn.ywxi.net/js/1.js"
-          strategy="afterInteractive"
-        />
-
-        {/* Google AdSense */}
-        <Script
+        {/* Google AdSense (plain script tag, loads straight from head) */}
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4129411618696895"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
 
         {/* Verification Tags */}
@@ -156,6 +144,12 @@ export default async function RootLayout({
       <body className="min-h-screen bg-background text-foreground antialiased">
         <GoogleScripts />
         {children}
+
+        {/* TrustedSite Certification */}
+        <Script
+          src="https://cdn.ywxi.net/js/1.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
