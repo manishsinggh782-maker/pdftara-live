@@ -6,7 +6,7 @@ import { localeConfig, type Locale, locales } from '@/lib/i18n/config';
 import { generateHomeMetadata } from '@/lib/seo';
 import { fontVariables } from '@/lib/fonts';
 import { SkipLink } from '@/components/common/SkipLink';
-import { GoogleScripts } from '@/components/GoogleScripts'; 
+import { GoogleScripts } from '@/components/GoogleScripts';
 
 // CSS Path fix
 import '../globals.css';
@@ -25,8 +25,7 @@ export const viewport: Viewport = {
   ],
 };
 
-// ✅ Sirf wahi languages jinki messages/*.json file maujood hai
-// Title 60 character se kam, description lagbhag 120-155 character
+// Sirf wahi languages jinki messages/*.json file maujood hai
 const seoData: Record<string, { title: string; desc: string }> = {
   en: {
     title: 'PDFTara - Free PDF Tools Online & Desktop App',
@@ -90,7 +89,7 @@ const seoData: Record<string, { title: string; desc: string }> = {
   },
 };
 
-// 🔑 English keywords (desktop app + offline AI copilot)
+// English keywords (desktop app + offline AI copilot)
 const englishKeywords: string[] = [
   'PDFTara',
   'PDFTara Studio',
@@ -145,10 +144,8 @@ export async function generateMetadata({
     metadataBase: new URL('https://www.pdftara.com/'),
     title: { default: currentSeo.title, template: `%s` },
     description: currentSeo.desc,
-    // Keywords sirf English page par (baaki languages ke liye English keywords sahi nahi)
     ...(validLocale === 'en' ? { keywords: englishKeywords } : {}),
     alternates: {
-      // Individual tool/blog pages apne page.tsx me apna full canonical override karenge
       canonical: `https://www.pdftara.com/${validLocale}/`,
       languages,
     },
@@ -205,7 +202,6 @@ export default async function LocaleLayout({
     'aggregateRating': { '@type': 'AggregateRating', 'ratingValue': '4.9', 'ratingCount': '18540', 'bestRating': '5', 'worstRating': '1' }
   };
 
-  // 🖥️ PDFTara Studio - Desktop App (Windows, Mac, Linux)
   const desktopSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
@@ -222,7 +218,6 @@ export default async function LocaleLayout({
     'publisher': { '@type': 'Organization', 'name': 'PDFTara', 'url': 'https://www.pdftara.com/' }
   };
 
-  // ✨ PDFTara Studio (NEW) - Web version
   const studioSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
@@ -264,19 +259,19 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={direction} className={fontVariables} suppressHydrationWarning>
       <head>
-        {/* WASM Fix - All multithreading support */}
-        <script src="/coi-serviceworker.js"></script>
-        
-        {/* Google AdSense - Global */}
-        <script 
-          async 
+        {/* coi-serviceworker REMOVED: it injected COOP/COEP, blocked Google ads
+            and caused page reloads. Do NOT add it back here. */}
+
+        {/* Google AdSense - Global (ONLY here, not in any other layout) */}
+        <script
+          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4129411618696895"
           crossOrigin="anonymous"
         ></script>
 
         {/* AdSense verification */}
         <meta name="google-adsense-account" content="ca-pub-4129411618696895" />
-        
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
@@ -303,7 +298,6 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <SkipLink targetId="main-content">Skip to main content</SkipLink>
           <div className="relative flex min-h-screen flex-col">
-            {/* Main content wrapper */}
             <main id="main-content" className="flex-1">
               {children}
             </main>
