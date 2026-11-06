@@ -1,6 +1,6 @@
 // PDFTara Chrome Extension - Background Service Worker
 
-const PDFTara_URL = 'https://PDFTara.devtoolcafe.com/en';
+const PDFTara_URL = 'https://www.pdftara.com/en';
 
 // Create context menu when extension is installed
 chrome.runtime.onInstalled.addListener(() => {
