@@ -13,6 +13,12 @@
     { "source": "/download/linux-deb", "destination": "https://github.com/anuajsingh256-design/PDFTara-Releases/releases/download/v0.1.0/PDFTara-Studio-0.1.0-linux-amd64.deb", "permanent": false },
     { "source": "/download/linux-deb/", "destination": "https://github.com/anuajsingh256-design/PDFTara-Releases/releases/download/v0.1.0/PDFTara-Studio-0.1.0-linux-amd64.deb", "permanent": false }
   ],
+  "rewrites": [
+    { "source": "/pdfjs-viewer/viewer.html", "destination": "/pdfjs-viewer/viewer/" },
+    { "source": "/pdfjs-viewer/sign-viewer.html", "destination": "/pdfjs-viewer/sign-viewer/" },
+    { "source": "/pdfjs-viewer/form-viewer.html", "destination": "/pdfjs-viewer/form-viewer/" },
+    { "source": "/direct-pdf-editor/index.html", "destination": "/direct-pdf-editor/" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
