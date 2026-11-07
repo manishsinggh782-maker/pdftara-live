@@ -111,12 +111,7 @@ export default async function RootLayout({
       <head>
         {/* coi-serviceworker REMOVED: it injected COEP and blocked Google ads */}
 
-        {/* Google AdSense (plain script tag, loads straight from head) */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4129411618696895"
-          crossOrigin="anonymous"
-        />
+        {/* AdSense script ab <head> mein nahi hai. Neeche body mein hydration ke baad load hota hai */}
 
         {/* Verification Tags */}
         <meta
@@ -144,6 +139,15 @@ export default async function RootLayout({
       <body className="min-h-screen bg-background text-foreground antialiased">
         <GoogleScripts />
         {children}
+
+        {/* Google AdSense: React hydrate hone ke BAAD load hota hai, taaki ad-divs na hatein */}
+        <Script
+          id="adsense-script"
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4129411618696895"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
 
         {/* TrustedSite Certification */}
         <Script
